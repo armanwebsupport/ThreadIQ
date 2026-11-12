@@ -1,0 +1,9 @@
+{
+  "appId": "com.armanwesupport.threadiq",
+  "appName": "ThreadIQ",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

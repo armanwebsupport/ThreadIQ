@@ -1,0 +1,11 @@
+{
+  "name": "ThreadIQ - Track. Inspect. Manage.",
+  "short_name": "ThreadIQ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06142d",
+  "theme_color": "#06142d",
+  "description": "Offline-first tyre inspection and fleet management.",
+  "icons": []
+}

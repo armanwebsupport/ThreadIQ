@@ -1,0 +1,6 @@
+label{display:block;font-size:.8rem;color:var(--mut);margin:12px 0 5px}
+input,select,textarea{width:100%;background:var(--bg2);border:1px solid #24508a;color:#fff;border-radius:12px;padding:13px;font-size:1rem;outline:none}input:focus,select:focus{border-color:var(--cyan)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.chip{background:var(--bg2);border:1px solid var(--ocean);border-radius:30px;padding:9px 14px;font-size:.85rem;color:#fff}.chip.d{background:var(--purple);border-color:var(--purple)}.chip.add{border-style:dashed;color:var(--cyan)}
+.photo{width:100%;max-height:160px;object-fit:cover;border-radius:12px;margin-top:8px}
+.diagram{background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center}

@@ -74,3 +74,9 @@ function settings(){const p=prof();$('#view').innerHTML=`<h2>Settings</h2><form 
   $('#rs').onchange=async e=>{try{if(!confirm('Current data replace hoga. Continue?'))return;await DB.importAll(JSON.parse(await e.target.files[0].text()));toast('Restore complete');go('home')}catch(x){toast(x.message)}}}
 async function backup(){const b=new Blob([JSON.stringify(await DB.exportAll(),null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='threadiq-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click()}
 boot();
+/* Android hardware back button (Capacitor App plugin). Inner pages go back to parent/home; Home needs a double press to exit. */
+(()=>{const A=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.App;if(!A)return;let last=0;
+A.addListener('backButton',()=>{const h=(location.hash||'#home').slice(1).split('/')[0];
+ if(!$('#register').classList.contains('hidden')||$('#nav').classList.contains('hidden'))return A.exitApp();
+ if(h==='home'||h===''){if(Date.now()-last<2000)return A.exitApp();last=Date.now();return toast('Exit ke liye dobara Back dabao')}
+ go(['vehicle','vehicle-add'].includes(h)?'vehicles':'home')})})();

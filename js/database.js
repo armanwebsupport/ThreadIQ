@@ -9,7 +9,9 @@ const DB=(()=>{
     o.get('ctr_'+prefix).onsuccess=e=>{n=((e.target.result||{}).value||0)+1;o.put({key:'ctr_'+prefix,value:n})};
     t.oncomplete=()=>ok(prefix+'-'+String(n).padStart(pad,'0'));t.onerror=()=>no(t.error)});
   const exportAll=async()=>{const o={app:'ThreadIQ',version:1,exported:new Date().toISOString()};for(const s of STORES)o[s]=await run(s,'readonly',x=>x.getAll());return o};
-  const importAll=async d=>{if(d.app!=='ThreadIQ')throw new Error('Invalid backup file');for(const s of STORES){await run(s,'readwrite',x=>x.clear());for(const r of d[s]||[])await run(s,'readwrite',x=>x.put(r))}};
-  return{open,nextId,exportAll,importAll,
+  const check=d=>{if(!d||d.app!=='ThreadIQ')throw new Error('Yeh ThreadIQ backup file nahi hai');for(const s of STORES)if(!Array.isArray(d[s]))throw new Error('Backup file adhuri hai ('+s+' missing)');return d};
+  const write=async d=>{for(const s of STORES){await run(s,'readwrite',x=>x.clear());for(const r of d[s])await run(s,'readwrite',x=>x.put(r))}};
+  const importAll=async d=>{check(d);const snap=await exportAll();try{await write(d)}catch(e){await write(snap);throw new Error('Restore fail hua, purana data wapas rakha gaya')}};
+  return{open,nextId,exportAll,importAll,check,
     put:(s,v)=>run(s,'readwrite',o=>o.put(v)),get:(s,k)=>run(s,'readonly',o=>o.get(k)),all:s=>run(s,'readonly',o=>o.getAll()),del:(s,k)=>run(s,'readwrite',o=>o.delete(k))};
 })();

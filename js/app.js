@@ -67,8 +67,10 @@ function settings(){const p=prof();$('#view').innerHTML=`<h2>Settings</h2><form 
   <div class="card"><h3 style="margin-top:0">Backup &amp; Restore</h3><button class="btn" onclick="backup()">Download JSON Backup</button><label>Restore from backup file</label><input type="file" id="rs" accept=".json"></div>
   <div class="card mut">ThreadIQ v1.0 (Phase 1) · Track. Inspect. Manage.</div>`;
   $('#pf').onsubmit=e=>{e.preventDefault();localStorage.setItem('tiq_profile',JSON.stringify({name:$('#sn').value.trim(),emp:$('#se').value,dept:$('#sd').value,company:$('#sc').value}));toast('Profile updated')};
-  $('#rs').onchange=async e=>{try{if(!confirm('Current data replace hoga. Continue?'))return;await DB.importAll(JSON.parse(await e.target.files[0].text()));toast('Restore complete');go('home')}catch(x){toast(x.message)}}}
-async function backup(){const b=new Blob([JSON.stringify(await DB.exportAll(),null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='threadiq-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click()}
+  $('#rs').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=DB.check(JSON.parse(await f.text()));if(!confirm(`Backup: ${d.vehicles.length} vehicles, ${d.tyres.length} tyres, ${d.inspections.length} inspections.\nCurrent data replace hoga. Continue?`))return;await DB.importAll(d);if(d.profile)localStorage.setItem('tiq_profile',JSON.stringify(d.profile));toast('Restore complete');go('home')}catch(x){toast(x.message)}finally{e.target.value=''}}}
+async function backup(){const d=await DB.exportAll();d.profile=prof();const txt=JSON.stringify(d,null,1),name='threadiq-backup-'+new Date().toISOString().slice(0,10)+'.json',P=(window.Capacitor&&Capacitor.Plugins)||{};
+  try{if(P.Filesystem&&P.Share){const r=await P.Filesystem.writeFile({path:name,data:txt,directory:'CACHE',encoding:'utf8'});await P.Share.share({title:'ThreadIQ Backup',text:'ThreadIQ backup '+name,url:r.uri,dialogTitle:'Backup kahan save karein?'});return}
+  const el=document.createElement('a');el.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));el.download=name;el.click()}catch(x){if(!/cancel/i.test(x.message||''))toast('Backup fail: '+(x.message||x))}}
 boot();
 
 /* Android hardware back button (Capacitor App plugin). Inner pages go back to parent/home; Home needs a double press to exit. */

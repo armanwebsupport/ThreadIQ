@@ -7,7 +7,8 @@ let draft={axles:[...PRESETS[6]],cat:'t6',photo:''};
 const HEALTHY=['Good','Satisfactory'],CRIT=['Critical','Unserviceable'];
 
 async function boot(){
-  await DB.open();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  await DB.open();if('serviceWorker'in navigator){const native=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform();
+    if(native){navigator.serviceWorker.getRegistrations().then(r=>r.forEach(x=>x.unregister()));if(window.caches)caches.keys().then(k=>k.forEach(x=>caches.delete(x)))}else navigator.serviceWorker.register('sw.js').catch(()=>{})}
   setTimeout(()=>{$('#preloader').style.opacity=0;setTimeout(()=>$('#preloader').remove(),500);prof()?start():register()},1900)}
 function register(){const r=$('#register');r.classList.remove('hidden');r.style.cssText='padding:30px 18px;max-width:480px;margin:auto';
   r.innerHTML=`<h1 class="brand" style="font-size:1.8rem">Thread<span>IQ</span></h1><p class="mut">Technician Registration</p><form id="rf" class="card" style="margin-top:16px">
@@ -19,7 +20,7 @@ async function route(){const h=(location.hash||'#home').slice(1),[p,arg]=h.split
   const tab=['vehicle-add','vehicle'].includes(p)?'vehicles':['home','vehicles','inspection','analytics'].includes(p)?p:'more';
   document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.dataset.r===tab));
   $('#view').innerHTML='';scrollTo(0,0);
-  const R={home,vehicles,'vehicle-add':vAdd,vehicle:vDetail,inspection,history:inspHistory,'inspection-view':inspView,more,settings,inventory,tyre:tyreView,'tyre-add':tyreForm,alerts:()=>soon('Alerts','Phase 5')};
+  const R={home,vehicles,'vehicle-add':vAdd,vehicle:vDetail,inspection,history:inspHistory,replacement,rotation,maintenance,'maintenance-add':maintenanceForm,'inspection-view':inspView,more,settings,inventory,tyre:tyreView,'tyre-add':tyreForm,alerts:()=>soon('Alerts','Phase 5')};
   const L={inspection:'Inspection|Phase 3',analytics:'Analytics|Phase 5',inventory:'Tyre Inventory|Phase 2',replacement:'Replacement|Phase 4',rotation:'Rotation|Phase 4',reports:'Reports|Phase 5',history:'Inspection History|Phase 3',maintenance:'Maintenance|Phase 4',pressure:'Pressure Monitoring|Phase 3'};
   if(R[p])await R[p](arg);else if(L[p])soon(...L[p].split('|'));else go('home')}
 
@@ -60,7 +61,7 @@ function vAdd(){const d=draft,opt=a=>a.map(x=>`<option>${x}</option>`).join('');
     const v={id:await DB.nextId('VH',4),reg,make:$('#make').value,model:$('#model').value.trim(),category:d.cat,axles:[...d.axles],wheels:wheelsOf(d.axles),vtype:$('#vtype').value,chassis:$('#chas').value,location:$('#loc').value,company:$('#comp').value,photo:d.photo,odo:+$('#km').value||0,hours:+$('#eh').value||0,regDate:$('#dor').value,active:true,created:new Date().toISOString(),createdBy:prof().name};
     await DB.put('vehicles',v);draft={axles:[...PRESETS[6]],cat:'t6',photo:''};toast('Vehicle saved');go('vehicle/'+v.id)}}
 async function archiveV(id){if(!confirm('Archive this vehicle? Its history will be kept.'))return;const v=await DB.get('vehicles',id);v.active=false;await DB.put('vehicles',v);toast('Archived');go('vehicles')}
-function more(){const M=[['🛞','Tyre Inventory','inventory'],['♻️','Replacement','replacement'],['🔄','Rotation','rotation'],['📄','Reports','reports'],['🕘','History','history'],['⚙️','Settings','settings']];
+function more(){const M=[['🛞','Tyre Inventory','inventory'],['♻️','Replacement','replacement'],['🔄','Rotation','rotation'],['🔧','Maintenance','maintenance'],['📄','Reports','reports'],['🕘','History','history'],['⚙️','Settings','settings']];
   $('#view').innerHTML=`<h2>More</h2><div class="quick">${M.map(q=>`<div class="q" onclick="go('${q[2]}')"><i>${q[0]}</i>${q[1]}</div>`).join('')}</div>`}
 function settings(){const p=prof();$('#view').innerHTML=`<h2>Settings</h2><form id="pf" class="card"><h3 style="margin-top:0">Technician Profile</h3>
   <label>Name</label><input id="sn" value="${esc(p.name)}" required><label>Employee ID</label><input id="se" value="${esc(p.emp)}"><label>Department</label><input id="sd" value="${esc(p.dept)}"><label>Company</label><input id="sc" value="${esc(p.company)}"><br><button class="btn">Save Profile</button></form>

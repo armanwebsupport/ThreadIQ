@@ -11,6 +11,7 @@ const freePos=(v,all)=>v?buildLayout(v.axles).filter(p=>!all.some(t=>t.vehicleId
 const posOpts=(v,all,sel)=>freePos(v,all).map(p=>`<option value="${p.id}" ${p.id===sel?'selected':''}>${p.label}</option>`).join('');
 const fmt=d=>d?new Date(d).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:d.length>10?'short':undefined}):'—';
 
+const chkReading=(v,km,h)=>{if(km===''||km==null||isNaN(+km))return'Enter the current KM reading';h=(h===''||h==null)?v.hours:+h;return +km<v.odo?`KM cannot be lower than the vehicle's current reading (${v.odo})`:h<v.hours?`Hours cannot be lower than the vehicle's current reading (${v.hours})`:null};
 async function applyReading(v,km,h){if(km===''||km==null||isNaN(+km))return'Enter the current KM reading';km=+km;h=(h===''||h==null)?v.hours:+h;
   if(km<v.odo)return`KM cannot be lower than the vehicle's current reading (${v.odo})`;if(h<v.hours)return`Hours cannot be lower than the vehicle's current reading (${v.hours})`;v.odo=km;v.hours=h;await DB.put('vehicles',v);return null}
 const rdRow=v=>`<div class="row"><div><label>Current KM *</label><input id="rk" type="number" min="0" step="any" inputmode="decimal" value="${v?v.odo:''}"></div><div><label>Engine Hours</label><input id="rh" type="number" min="0" step="0.1" inputmode="decimal" value="${v?v.hours:''}"></div></div>`;
@@ -30,7 +31,7 @@ async function vDetail(id){const v=await DB.get('vehicles',id);if(!v)return go('
   $('#view').innerHTML=`<h2>${esc(v.reg)}</h2>${v.photo?`<img class="photo" src="${v.photo}">`:''}<div class="card"><b>${esc(v.make)} ${esc(v.model)}</b><div class="mut">${[esc(v.vtype),v.wheels+' wheels',v.axles.length+' axles ('+v.axles.join('-')+')'].filter(Boolean).join(' · ')}</div><div class="mut">${esc(v.location)} ${esc(v.company)}</div><div class="mut">Odometer ${v.odo} KM · ${v.hours} hrs · ID ${v.id}</div></div>
   <h3>Tyre Position Map</h3><div class="diagram">${diagram(v,col)}<div class="mut">🟢 Healthy 🟡 Attention 🔴 Critical ⚪ No inspection / empty · tap a wheel</div></div>
   <h3>Positions (${ty.length}/${v.wheels} fitted)</h3><div class="card">${L.map(p=>{const t=ty.find(x=>x.positionId===p.id);return`<div onclick="posTap('${v.id}','${p.id}')" style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;cursor:pointer"><span>${p.label}</span>${t?`<span><b style="color:var(--cyan)">${t.id}</b> <span class="pill ${condCls(t.condition)}">${esc(t.condition||'Not inspected')}</span></span>`:'<span class="pill n">Empty · Fit tyre</span>'}</div>`}).join('')}</div>
-  <button class="btn" style="margin-bottom:10px" onclick="insPre='${v.id}';go('inspection')">Start Inspection</button><button class="btn red" onclick="archiveV('${v.id}')">Archive Vehicle</button>`}
+  <button class="btn" style="margin-bottom:10px" onclick="insPre='${v.id}';go('inspection')">Start Inspection</button><div class="row" style="margin-bottom:10px"><button class="btn sec" onclick="go('replacement/${v.id}')">Replace Tyre</button><button class="btn sec" onclick="go('rotation/${v.id}')">Rotate Tyres</button></div><button class="btn red" onclick="archiveV('${v.id}')">Archive Vehicle</button>`}
 
 async function tyreForm(arg){const [vid,pid]=(arg||'').split(':'),vs=(await DB.all('vehicles')).filter(x=>x.active!==false),all=await DB.all('tyres');
   $('#view').innerHTML=`<h2>Add New Tyre</h2><form id="tf" class="card">

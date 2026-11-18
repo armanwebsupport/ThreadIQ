@@ -20,7 +20,7 @@ async function route(){const h=(location.hash||'#home').slice(1),[p,arg]=h.split
   const tab=['vehicle-add','vehicle'].includes(p)?'vehicles':['home','vehicles','inspection','analytics'].includes(p)?p:'more';
   document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.dataset.r===tab));
   $('#view').innerHTML='';scrollTo(0,0);
-  const R={home,vehicles,'vehicle-add':vAdd,vehicle:vDetail,inspection,history:inspHistory,replacement,rotation,maintenance,'maintenance-add':maintenanceForm,'inspection-view':inspView,more,settings,inventory,tyre:tyreView,'tyre-add':tyreForm,alerts:()=>soon('Alerts','Phase 5')};
+  const R={home,vehicles,'vehicle-add':vAdd,vehicle:vDetail,inspection,history:inspHistory,replacement,rotation,maintenance,'maintenance-add':maintenanceForm,jobcard:jobCard,'inspection-view':inspView,more,settings,inventory,tyre:tyreView,'tyre-add':tyreForm,alerts:()=>soon('Alerts','Phase 5')};
   const L={inspection:'Inspection|Phase 3',analytics:'Analytics|Phase 5',inventory:'Tyre Inventory|Phase 2',replacement:'Replacement|Phase 4',rotation:'Rotation|Phase 4',reports:'Reports|Phase 5',history:'Inspection History|Phase 3',maintenance:'Maintenance|Phase 4',pressure:'Pressure Monitoring|Phase 3'};
   if(R[p])await R[p](arg);else if(L[p])soon(...L[p].split('|'));else go('home')}
 
@@ -80,4 +80,4 @@ boot();
 A.addListener('backButton',()=>{const h=(location.hash||'#home').slice(1).split('/')[0];
  if(!$('#register').classList.contains('hidden')||$('#nav').classList.contains('hidden'))return A.exitApp();
  if(h==='home'||h===''){if(Date.now()-last<2000)return A.exitApp();last=Date.now();return toast('Press back again to exit')}
- if(h==='inspection'&&window.insBack&&insBack())return;if(['tyre','tyre-add','inspection-view'].includes(h))return history.back();go(['vehicle','vehicle-add'].includes(h)?'vehicles':'home')})})();
+ if(h==='inspection'&&window.insBack&&insBack())return;if(['tyre','tyre-add','inspection-view','jobcard'].includes(h))return history.back();go(['vehicle','vehicle-add'].includes(h)?'vehicles':'home')})})();

@@ -36,7 +36,7 @@ async function vDetail(id){const v=await DB.get('vehicles',id);if(!v)return go('
 async function tyreForm(arg){const [vid,pid]=(arg||'').split(':'),vs=(await DB.all('vehicles')).filter(x=>x.active!==false),all=await DB.all('tyres');
   $('#view').innerHTML=`<h2>Add New Tyre</h2><form id="tf" class="card">
   <label>Brand / Manufacturer *</label><input id="tb" list="bl" required><datalist id="bl">${BRANDS.map(b=>`<option>${b}</option>`).join('')}</datalist>
-  <label>Tyre Model</label><input id="tm"><div class="row"><div><label>Tyre Size *</label><input id="tz" required placeholder="12.00R20"></div><div><label>Construction</label><select id="tc"><option>Radial</option><option>Bias</option></select></div></div>
+  <label>Tyre Model</label><input id="tm"><div class="row"><div><label>Tyre Size *</label><input id="tz" list="szl" required placeholder="12.00R20"><datalist id="szl">${szOpts()}</datalist></div><div><label>Construction</label><select id="tc"><option>Radial</option><option>Bias</option></select></div></div>
   <div class="row"><div><label>Ply Rating</label><input id="tp" placeholder="18PR"></div><div><label>Serial Number *</label><input id="ts" required></div></div>
   <label>Tread Pattern</label><input id="tt"><div class="row"><div><label>Purchase Date</label><input id="tpd" type="date"></div><div><label>Initial Tread Depth (mm)</label><input id="ti" type="number" min="0" step="0.1" inputmode="decimal"></div></div>
   <label>Fit on Vehicle</label><select id="tv"><option value="">Not fitted (keep in store)</option>${vs.map(x=>`<option value="${x.id}" ${x.id===vid?'selected':''}>${esc(x.reg)} – ${esc(x.model)}</option>`).join('')}</select>

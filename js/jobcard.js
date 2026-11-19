@@ -6,9 +6,9 @@ function problemsOf(e){const p=[],ph=(e.physical||[]).filter(x=>x!=='No Visible 
   if(ph.length)p.push(`Damage: ${ph.join(', ')}${e.severity&&e.severity!=='None'?' ('+e.severity+')':''}${e.damageLocation?' at '+e.damageLocation:''}`);
   if(e.damageDescription)p.push('Details: '+e.damageDescription);
   if(e.valve&&e.valve!=='Good')p.push('Valve: '+e.valve);if(e.rim&&e.rim!=='Good')p.push('Rim: '+e.rim);if(e.nut&&e.nut!=='Tight')p.push('Wheel nut: '+e.nut);
-  if(!isNormalWear(e.wearObs))p.push('Tread wear: '+e.wearObs);if(e.remarks)p.push('Remarks: '+e.remarks);return p}
+  if(!isNormalWear(e.wearObs))p.push('Tread wear: '+e.wearObs);{const sd=stdFor(e.size),pf=sd&&e.pressure!=null&&e.pressure!==''?pressureFlag(sd,+e.pressure,e.size):null;if(pf)p.push('Pressure: '+pf);if(sd&&hasV(sd.minTread)&&e.treadCurrent!=null&&e.treadCurrent<=+sd.minTread)p.push(`Tread: ${e.treadCurrent} mm is at or below the company minimum of ${sd.minTread} mm`)}if(e.remarks)p.push('Remarks: '+e.remarks);return p}
 function suggestType(e){const ph=e.physical||[];if(ph.includes('Puncture'))return'Puncture Repair';if(ph.some(x=>REPAIR_DMG.includes(x)))return'Tyre Repair';if(e.nut&&e.nut!=='Tight')return'Wheel Nut Check';
-  if((e.valve&&e.valve!=='Good')||(e.rim&&e.rim!=='Good'))return'Valve / Rim Service';if(ph.some(x=>['Shoulder Wear','Irregular Wear','Uneven Wear'].includes(x))||!isNormalWear(e.wearObs))return'Wheel Alignment';return'Other'}
+  if((e.valve&&e.valve!=='Good')||(e.rim&&e.rim!=='Good'))return'Valve / Rim Service';{const sd=stdFor(e.size);if(sd&&e.pressure!=null&&e.pressure!==''&&pressureFlag(sd,+e.pressure,e.size))return'Pressure Correction'}if(ph.some(x=>['Shoulder Wear','Irregular Wear','Uneven Wear'].includes(x))||!isNormalWear(e.wearObs))return'Wheel Alignment';return'Other'}
 const jOpen=j=>['Scheduled','In Progress'].includes(j.status);
 
 /* Card shown at the top of the tyre profile (tap a wheel in the vehicle map) */
@@ -17,7 +17,7 @@ async function findingsCard(t){const r=await latestEntry(t.id);if(!r)return'<div
   const col={g:'var(--ok)',y:'var(--warn)',r:'var(--bad)',n:'var(--mut)'}[condCls(e.condition)];
   return`<div class="card" style="border-left:5px solid ${col}"><div style="display:flex;justify-content:space-between;gap:8px"><b>Latest Inspection</b><span class="pill ${condCls(e.condition)}">${esc(e.condition)}</span></div>
   <div class="mut"><span style="color:var(--cyan);cursor:pointer" onclick="go('inspection-view/${i.id}')">${i.id}</span> · ${fmt(i.dateTime)} · ${esc(i.inspector)} · ${i.km} KM</div>
-  <div class="mut" style="margin-top:6px">Tread (mm): inner ${mm(e.treadInner)} · centre ${mm(e.treadCentre)} · outer ${mm(e.treadOuter)} · current ${mm(e.treadCurrent)} (previous ${mm(e.treadPrevious)})${e.pressure!=null&&e.pressure!==''?' · '+e.pressure+' PSI':''}</div>
+  ${stdFor(e.size)?`<div class="mut" style="margin-top:6px">Company standard (${esc(e.size)}): ${stdLine(stdFor(e.size))}</div>`:''}<div class="mut" style="margin-top:6px">Tread (mm): inner ${mm(e.treadInner)} · centre ${mm(e.treadCentre)} · outer ${mm(e.treadOuter)} · current ${mm(e.treadCurrent)} (previous ${mm(e.treadPrevious)})${e.pressure!=null&&e.pressure!==''?' · '+e.pressure+' PSI':''}</div>
   <h3 style="margin:12px 0 6px">${pr.length?'Problems Identified':'No problem identified'}</h3>${pr.map(x=>`<div style="padding:4px 0">⚠️ ${esc(x)}</div>`).join('')}
   ${(e.photos||[]).map(s=>`<img class="photo" style="max-width:100px;display:inline-block;margin:8px 6px 0 0" src="${s}">`).join('')}
   ${open?`<br><button class="btn" style="margin-top:10px" onclick="go('jobcard/${open.id}')">Open Job Card ${open.id}</button>`:pr.length?`<br><button class="btn" style="margin-top:10px" onclick="createJobCard('${t.id}')">Create Job Card</button>`:''}

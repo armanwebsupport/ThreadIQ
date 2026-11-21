@@ -15,7 +15,7 @@ async function mAct(id,st){if(['Completed','Cancelled'].includes(st)&&!confirm(`
 async function maintenanceForm(){
   const vs=(await DB.all('vehicles')).filter(v=>v.active!==false),ty=(await DB.all('tyres')).filter(t=>t.status!=='Scrapped');
   $('#view').innerHTML=`<h2>New Maintenance Job</h2><form id="mf" class="card"><label>Job Type *</label><select id="mt">${MTYPES.map(t=>`<option>${t}</option>`).join('')}</select>
-  <label>Vehicle (optional)</label><select id="mv"><option value="">— None —</option>${vs.map(v=>`<option value="${v.id}">${esc(v.reg)}</option>`).join('')}</select>
+  <label>Vehicle (optional)</label><select id="mv"><option value="">— None —</option>${vs.map(v=>`<option value="${v.id}">${vLabel(v)}</option>`).join('')}</select>
   <label>Tyre (optional)</label><select id="mty"></select><label>Status</label><select id="ms">${MSTAT.slice(0,3).map(s=>`<option>${s}</option>`).join('')}</select>
   <div class="row"><div><label>Due Date</label><input id="mdu" type="date"></div><div><label>Date Done</label><input id="mdo" type="date"></div></div>
   <div class="row"><div><label>Vehicle KM (optional)</label><input id="mk" type="number" min="0" step="any" inputmode="decimal"></div><div><label>Engine Hours (optional)</label><input id="mh" type="number" min="0" step="0.1" inputmode="decimal"></div></div>

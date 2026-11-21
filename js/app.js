@@ -24,7 +24,7 @@ async function route(){const h=(location.hash||'#home').slice(1),[p,arg]=h.split
   const L={inspection:'Inspection|Phase 3',analytics:'Analytics|Phase 5',inventory:'Tyre Inventory|Phase 2',replacement:'Replacement|Phase 4',rotation:'Rotation|Phase 4',reports:'Reports|Phase 5',history:'Inspection History|Phase 3',maintenance:'Maintenance|Phase 4',pressure:'Pressure Monitoring|Phase 3'};
   if(R[p])await R[p](arg);else if(L[p])soon(...L[p].split('|'));else go('home')}
 
-async function home(){const nAlerts=(await computeAlerts()).length;const p=prof(),vs=await DB.all('vehicles'),ty=await DB.all('tyres'),act=vs.filter(v=>v.active!==false);
+async function home(){const nAlerts=(await computeAlerts()).length,fs=await fleetStatus();const p=prof(),vs=await DB.all('vehicles'),ty=await DB.all('tyres'),act=vs.filter(v=>v.active!==false);
   const h=ty.filter(t=>HEALTHY.includes(t.condition)).length,a=ty.filter(t=>t.condition==='Needs Attention').length,c=ty.filter(t=>CRIT.includes(t.condition)).length,ins=h+a+c,pct=ins?Math.round(h/ins*100):0,C=2*Math.PI*44;
   const Q=[['🚛','Vehicles','vehicles'],['🛞','Tyre Inventory','inventory'],['📝','New Inspection','inspection'],['🔧','Maintenance','maintenance'],['🔄','Tyre Rotation','rotation'],['♻️','Tyre Replacement','replacement'],['🎚️','Pressure','pressure'],['📄','Reports','reports'],['🕘','History','history'],['⚙️','Settings','settings']];
   $('#view').innerHTML=`<div class="hero"><p>Welcome Back</p><h2>${esc(p.name)}</h2><p>${esc(p.company)}</p></div>
@@ -32,17 +32,14 @@ async function home(){const nAlerts=(await computeAlerts()).length;const p=prof(
   <div class="card"><h3 style="margin-top:0">Tyre Health Overview</h3><div class="health"><div class="ring"><svg width="110" height="110" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#0A2142" stroke-width="10"/><circle cx="50" cy="50" r="44" fill="none" stroke="#20D997" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C*pct/100} ${C}"/></svg><div>${ins?pct+'%':'--'}</div></div>
   <div class="legend"><div><i class="dot" style="background:var(--ok)"></i>Healthy: ${h}</div><div><i class="dot" style="background:var(--warn)"></i>Attention: ${a}</div><div><i class="dot" style="background:var(--bad)"></i>Critical: ${c}</div></div></div></div>
   <h3>Quick Access</h3><div class="quick">${Q.map(q=>`<div class="q" onclick="go('${q[2]}')"><i>${q[0]}</i>${q[1]}</div>`).join('')}</div>
-  <h3>Active Fleet</h3>${act.length?act.map(vehCard(ty)).join(''):'<div class="card mut">No vehicles yet. Add one from Vehicles.</div>'}`}
-const vehCard=ty=>v=>{const t=ty.filter(x=>x.vehicleId===v.id);return`<div class="card veh" onclick="go('vehicle/${v.id}')"><div><b>${esc(v.reg)}</b><div class="mut">${esc(v.make)} ${esc(v.model)}</div><div class="mut">${v.wheels} tyres · ${t.filter(x=>HEALTHY.includes(x.condition)).length} healthy</div></div><span class="pill n">Not inspected</span></div>`};
-async function vehicles(){const vs=(await DB.all('vehicles')).filter(v=>v.active!==false),ty=await DB.all('tyres');
-  $('#view').innerHTML=`<h2>Vehicles</h2><button class="btn" onclick="go('vehicle-add')">+ Add New Vehicle</button><br>${vs.length?vs.map(vehCard(ty)).join(''):'<div class="card mut">No vehicles yet.</div>'}`}
-
+  <h3>Active Fleet</h3>${act.length?act.map(vehCard(ty,fs)).join(''):'<div class="card mut">No vehicles yet. Add one from Vehicles.</div>'}`}
 function vAdd(){const d=draft,opt=a=>a.map(x=>`<option>${x}</option>`).join('');
   $('#view').innerHTML=`<h2>Add New Vehicle</h2><form id="vf" class="card">
   <label>Vehicle Category</label><select id="cat">${Object.entries(CATS).map(([k,c])=>`<option value="${k}" ${k==d.cat?'selected':''}>${c.label}</option>`).join('')}</select>
   <label>Number of Wheels (loads default axle layout)</label><select id="wh"></select>
   <label>Axle Layout (tap to toggle Single / Dual)</label><div class="chips" id="axl"></div><div class="mut" id="wsum"></div><div class="diagram" id="dg"></div>
   <label>Vehicle Registration Number *</label><input id="reg" required placeholder="JH09AB1234" style="text-transform:uppercase">
+  <label>Vehicle Code (your fleet / equipment code, optional)</label><input id="vcode" placeholder="e.g. DT-12">
   <div class="row"><div><label>Manufacturer *</label><select id="make">${opt(MAKES)}</select></div><div><label>Model *</label><input id="model" required></div></div>
   <label>Vehicle Type</label><input id="vtype" placeholder="Dump Truck / Tipper / Bus...">
   <label>Chassis Number (optional)</label><input id="chas"><label>Deployment Location</label><input id="loc"><label>Company / Contractor</label><input id="comp" value="${esc(prof().company)}">
@@ -58,7 +55,8 @@ function vAdd(){const d=draft,opt=a=>a.map(x=>`<option>${x}</option>`).join('');
   $('#ph').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,640/im.width);c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);d.photo=c.toDataURL('image/jpeg',.7);$('#pv').src=d.photo;$('#pv').classList.remove('hidden')};im.src=URL.createObjectURL(f)};
   $('#vf').onsubmit=async e=>{e.preventDefault();const reg=$('#reg').value.trim().toUpperCase(),all=await DB.all('vehicles');
     if(all.some(v=>normReg(v.reg)===normReg(reg)))return toast('This registration number is already saved');
-    const v={id:await DB.nextId('VH',4),reg,make:$('#make').value,model:$('#model').value.trim(),category:d.cat,axles:[...d.axles],wheels:wheelsOf(d.axles),vtype:$('#vtype').value,chassis:$('#chas').value,location:$('#loc').value,company:$('#comp').value,photo:d.photo,odo:+$('#km').value||0,hours:+$('#eh').value||0,regDate:$('#dor').value,active:true,created:new Date().toISOString(),createdBy:prof().name};
+    const code=$('#vcode').value.trim();if(code&&all.some(v=>v.code&&normReg(v.code)===normReg(code)))return toast('This vehicle code is already used');
+    const v={id:await DB.nextId('VH',4),reg,code,make:$('#make').value,model:$('#model').value.trim(),category:d.cat,axles:[...d.axles],wheels:wheelsOf(d.axles),vtype:$('#vtype').value,chassis:$('#chas').value,location:$('#loc').value,company:$('#comp').value,photo:d.photo,odo:+$('#km').value||0,hours:+$('#eh').value||0,regDate:$('#dor').value,active:true,created:new Date().toISOString(),createdBy:prof().name};
     await DB.put('vehicles',v);draft={axles:[...PRESETS[6]],cat:'t6',photo:''};toast('Vehicle saved');go('vehicle/'+v.id)}}
 async function archiveV(id){if(!confirm('Archive this vehicle? Its history will be kept.'))return;const v=await DB.get('vehicles',id);v.active=false;await DB.put('vehicles',v);toast('Archived');go('vehicles')}
 function more(){const M=[['🛞','Tyre Inventory','inventory'],['♻️','Replacement','replacement'],['🔄','Rotation','rotation'],['🔧','Maintenance','maintenance'],['📄','Reports','reports'],['🕘','History','history'],['⚙️','Settings','settings']];

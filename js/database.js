@@ -1,5 +1,6 @@
 /* ThreadIQ database layer (IndexedDB). Stores are fixed for all phases. */
 const DB=(()=>{
+  const bell=()=>{if(typeof refreshBell==='function')refreshBell()};
   let db;const STORES=['vehicles','tyres','inspections','replacements','rotations','fitments','maintenance','meta'];
   const open=()=>new Promise((ok,no)=>{const r=indexedDB.open('threadiq',2);
     r.onupgradeneeded=e=>{const d=e.target.result;STORES.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:s==='meta'?'key':'id'})})};
@@ -13,5 +14,5 @@ const DB=(()=>{
   const write=async d=>{for(const s of STORES){await run(s,'readwrite',x=>x.clear());for(const r of d[s])await run(s,'readwrite',x=>x.put(r))}};
   const importAll=async d=>{check(d);const snap=await exportAll();try{await write(d)}catch(e){await write(snap);throw new Error('Restore failed. Your previous data was kept')}};
   return{open,nextId,exportAll,importAll,check,
-    put:(s,v)=>run(s,'readwrite',o=>o.put(v)),get:(s,k)=>run(s,'readonly',o=>o.get(k)),all:s=>run(s,'readonly',o=>o.getAll()),del:(s,k)=>run(s,'readwrite',o=>o.delete(k))};
+    put:(s,v)=>run(s,'readwrite',o=>o.put(v)).then(r=>{bell();return r}),get:(s,k)=>run(s,'readonly',o=>o.get(k)),all:s=>run(s,'readonly',o=>o.getAll()),del:(s,k)=>run(s,'readwrite',o=>o.delete(k)).then(r=>{bell();return r})};
 })();

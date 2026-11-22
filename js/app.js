@@ -2,7 +2,9 @@
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)};
 const prof=()=>JSON.parse(localStorage.getItem('tiq_profile')||'null');
-const go=r=>{location.hash=r};
+let navFwd=true,navBusy=false,curHash='';const SP={};
+const go=r=>{if(location.hash!=='#'+r)navFwd=true;location.hash=r},goBackTo=r=>{navFwd=false;location.hash=r};
+addEventListener('scroll',()=>{if(!navBusy&&curHash)SP[curHash]=window.scrollY},{passive:true});
 let draft={axles:[...PRESETS[6]],cat:'t6',photo:''};
 const HEALTHY=['Good','Satisfactory'],CRIT=['Critical','Unserviceable'];
 
@@ -16,13 +18,13 @@ function register(){const r=$('#register');r.classList.remove('hidden');r.style.
   $('#rf').onsubmit=e=>{e.preventDefault();localStorage.setItem('tiq_profile',JSON.stringify({name:$('#rn').value.trim(),emp:$('#re').value.trim(),dept:$('#rd').value.trim(),company:$('#rc').value.trim()}));r.classList.add('hidden');start()}}
 function start(){['#top','#nav'].forEach(s=>$(s).classList.remove('hidden'));window.onhashchange=route;route()}
 const soon=(t,ph)=>{$('#view').innerHTML=`<h2>${t}</h2><div class="card mut">This module is coming in ${ph}.</div>`};
-async function route(){const h=(location.hash||'#home').slice(1),[p,arg]=h.split('/');
+async function route(){const h=(location.hash||'#home').slice(1),[p,arg]=h.split('/'),key='#'+h,restore=navFwd?0:(SP[key]||0);navFwd=false;navBusy=true;
   const tab=['vehicle-add','vehicle'].includes(p)?'vehicles':['home','vehicles','inspection','analytics'].includes(p)?p:'more';
   document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.dataset.r===tab));
-  $('#view').innerHTML='';scrollTo(0,0);
+  $('#view').innerHTML='';
   const R={home,vehicles,'vehicle-add':vAdd,vehicle:vDetail,inspection,history:inspHistory,replacement,rotation,maintenance,'maintenance-add':maintenanceForm,jobcard:jobCard,'inspection-view':inspView,more,settings,inventory,tyre:tyreView,'tyre-add':tyreForm,alerts:alertsView,analytics,reports,report:reportView,pressure,'tyre-edit':tyreEdit,'vehicle-edit':vehicleEdit};
   const L={inspection:'Inspection|Phase 3',analytics:'Analytics|Phase 5',inventory:'Tyre Inventory|Phase 2',replacement:'Replacement|Phase 4',rotation:'Rotation|Phase 4',reports:'Reports|Phase 5',history:'Inspection History|Phase 3',maintenance:'Maintenance|Phase 4',pressure:'Pressure Monitoring|Phase 3'};
-  if(R[p])await R[p](arg);else if(L[p])soon(...L[p].split('|'));else go('home')}
+  try{if(R[p])await R[p](arg);else if(L[p])soon(...L[p].split('|'));else go('home')}finally{curHash=key;navBusy=false;scrollTo(0,restore);if(restore)[60,200,500].forEach(ms=>setTimeout(()=>{if(curHash===key&&Math.abs(scrollY-restore)>4)scrollTo(0,restore)},ms))}}
 
 async function home(){const nAlerts=(await computeAlerts()).length,fs=await fleetStatus();const p=prof(),vs=await DB.all('vehicles'),ty=await DB.all('tyres'),act=vs.filter(v=>v.active!==false);
   const h=ty.filter(t=>HEALTHY.includes(t.condition)).length,a=ty.filter(t=>t.condition==='Needs Attention').length,c=ty.filter(t=>CRIT.includes(t.condition)).length,ins=h+a+c,pct=ins?Math.round(h/ins*100):0,C=2*Math.PI*44;
@@ -71,4 +73,4 @@ boot();
 A.addListener('backButton',()=>{const h=(location.hash||'#home').slice(1).split('/')[0];
  if(!$('#register').classList.contains('hidden')||$('#nav').classList.contains('hidden'))return A.exitApp();
  if(h==='home'||h===''){if(Date.now()-last<2000)return A.exitApp();last=Date.now();return toast('Press back again to exit')}
- if(h==='inspection'&&window.insBack&&insBack())return;if(['tyre','tyre-add','inspection-view','jobcard','report','tyre-edit','vehicle-edit'].includes(h))return history.back();go(['vehicle','vehicle-add'].includes(h)?'vehicles':'home')})})();
+ if(h==='inspection'&&window.insBack&&insBack())return;if(['tyre','tyre-add','inspection-view','jobcard','report','tyre-edit','vehicle-edit'].includes(h))return history.back();goBackTo(['vehicle','vehicle-add'].includes(h)?'vehicles':'home')})})();

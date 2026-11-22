@@ -1,4 +1,5 @@
-/* Phase 2: unique tyre IDs (TQ-000001), tyre profiles, position mapping, fitment records, inventory. Position (A2-LO) and tyre identity (TQ-…) stay separate. */
+/* Phase 2: unique tyre IDs (your own number; old auto IDs look like TQ-000001), tyre profiles, position mapping, fitment records, inventory. Position (A2-LO) and tyre identity (TQ-…) stay separate. */
+const ID_RE=/^[A-Z0-9][A-Z0-9._-]{0,23}$/;
 const STATUSES=['New','In-Service','Removed','Spare','Under Repair','Scrapped'];
 const BRANDS=['Apollo','MRF','CEAT','JK Tyre','Bridgestone','Michelin','Goodyear','Yokohama','Continental','BKT','Other'];
 const REMOVE_REASONS=['Tread Wear','Sidewall Damage','Cut Damage','Tyre Burst','Irregular Wear','Repair Not Possible','Preventive Replacement','Other'];
@@ -34,7 +35,7 @@ async function vDetail(id){const v=await DB.get('vehicles',id);if(!v)return go('
   <button class="btn" style="margin-bottom:10px" onclick="insPre='${v.id}';go('inspection')">Start Inspection</button><div class="row" style="margin-bottom:10px"><button class="btn sec" onclick="go('replacement/${v.id}')">Replace Tyre</button><button class="btn sec" onclick="go('rotation/${v.id}')">Rotate Tyres</button></div><button class="btn sec" style="margin-bottom:10px" onclick="go('vehicle-edit/${v.id}')">Edit Vehicle Details</button><button class="btn red" onclick="archiveV('${v.id}')">Archive Vehicle</button>`}
 
 async function tyreForm(arg){const [vid,pid]=(arg||'').split(':'),vs=(await DB.all('vehicles')).filter(x=>x.active!==false),all=await DB.all('tyres');
-  $('#view').innerHTML=`<h2>Add New Tyre</h2><form id="tf" class="card">
+  $('#view').innerHTML=`<h2>Add New Tyre</h2><form id="tf" class="card"><label>Tyre Unique ID Number *</label><input id="tuid" required placeholder="e.g. T-1043" autocapitalize="characters" style="text-transform:uppercase"><div class="mut">Your own tyre number. Letters, numbers, - . _ only (max 24). It cannot be changed later.</div>
   <label>Brand / Manufacturer *</label><input id="tb" list="bl" required><datalist id="bl">${BRANDS.map(b=>`<option>${b}</option>`).join('')}</datalist>
   <label>Tyre Model</label><input id="tm"><div class="row"><div><label>Tyre Size *</label><input id="tz" list="szl" required placeholder="12.00R20"><datalist id="szl">${szOpts()}</datalist></div><div><label>Construction</label><select id="tc"><option>Radial</option><option>Bias</option></select></div></div>
   <div class="row"><div><label>Ply Rating</label><input id="tp" placeholder="18PR"></div><div><label>Serial Number *</label><input id="ts" required></div></div>
@@ -45,10 +46,10 @@ async function tyreForm(arg){const [vid,pid]=(arg||'').split(':'),vs=(await DB.a
   const sync=()=>{const v=vs.find(x=>x.id===$('#tv').value);$('#fw').classList.toggle('hidden',!v);$('#sw').classList.toggle('hidden',!!v);$('#tpos').innerHTML=posOpts(v,all,pid);$('#rk').value=v?v.odo:'';$('#rh').value=v?v.hours:''};
   $('#tv').onchange=sync;sync();
   $('#tf').onsubmit=async e=>{e.preventDefault();const fresh=await DB.all('tyres'),serial=$('#ts').value.trim(),brand=$('#tb').value.trim();
-    if(fresh.some(t=>t.serial.toLowerCase()===serial.toLowerCase()&&t.brand.toLowerCase()===brand.toLowerCase()))return toast('This serial number is already saved for this brand');
+    const uid=$('#tuid').value.trim().toUpperCase();if(!ID_RE.test(uid))return toast('Tyre ID: use only letters, numbers, - . _ (max 24 characters)');if(fresh.some(x=>x.id.toUpperCase()===uid))return toast('This tyre ID is already used');if(fresh.some(t=>t.serial.toLowerCase()===serial.toLowerCase()&&t.brand.toLowerCase()===brand.toLowerCase()))return toast('This serial number is already saved for this brand');
     const v=vs.find(x=>x.id===$('#tv').value),p=$('#tpos').value;
     if(v&&(!p||fresh.some(t=>t.vehicleId===v.id&&t.positionId===p)))return toast('This position is not empty');const fv=v?await DB.get('vehicles',v.id):null;if(fv){const er=await applyReading(fv,$('#rk').value,$('#rh').value);if(er)return toast(er)}
-    const t={id:await DB.nextId('TQ',6),brand,model:$('#tm').value.trim(),size:$('#tz').value.trim(),construction:$('#tc').value,ply:$('#tp').value,serial,pattern:$('#tt').value,purchaseDate:$('#tpd').value,initialTread:$('#ti').value===''?null:+$('#ti').value,installDate:'',vehicleId:null,positionId:null,status:$('#tst').value,condition:'',created:new Date().toISOString(),createdBy:prof().name,history:[]};
+    const t={id:uid,brand,model:$('#tm').value.trim(),size:$('#tz').value.trim(),construction:$('#tc').value,ply:$('#tp').value,serial,pattern:$('#tt').value,purchaseDate:$('#tpd').value,initialTread:$('#ti').value===''?null:+$('#ti').value,installDate:'',vehicleId:null,positionId:null,status:$('#tst').value,condition:'',created:new Date().toISOString(),createdBy:prof().name,history:[]};
     addEvent(t,'Created','Tyre registered in ThreadIQ');if(fv)await fitTyre(t,fv,p,$('#tid').value||today());else await DB.put('tyres',t);
     toast('Tyre saved: '+t.id);go('tyre/'+t.id)}}
 

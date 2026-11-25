@@ -24,7 +24,7 @@ async function replacement(arg){
     if(!confirm(`Replace ${old.id} with ${nw.id}?\nVehicle: ${v.reg}\nPosition: ${lbl}\nOld tyre will be marked: ${st}`))return;
     const er=await applyReading(v,$('#rk').value,$('#rh').value);if(er)return toast(er);
     for(const f of(await DB.all('fitments')).filter(f=>f.tyreId===old.id&&!f.toDate)){f.toDate=date;f.toKm=v.odo;f.toHours=v.hours;f.reason=reason;await DB.put('fitments',f)}
-    old.vehicleId=null;old.positionId=null;old.status=st;addEvent(old,st==='Scrapped'?'Scrapped':'Removed',`Replaced by ${nw.id} on ${v.reg} – ${lbl} at ${v.odo} KM / ${v.hours} hrs. Reason: ${reason}`);await DB.put('tyres',old);
-    await fitTyre(nw,v,pos,date);const det=$('#rpi').value.trim();addEvent(nw,'Replacement',`Installed as replacement for ${old.id}${det?'. '+det:''}`);await DB.put('tyres',nw);
+    old.vehicleId=null;old.positionId=null;old.status=st;addEvent(old,st==='Scrapped'?'Scrapped':'Removed',`Replaced by ${nw.id} on ${v.reg} – ${lbl} at ${v.odo} KM / ${v.hours} hrs. Reason: ${reason}`,date);await DB.put('tyres',old);
+    await fitTyre(nw,v,pos,date);const det=$('#rpi').value.trim();addEvent(nw,'Replacement',`Installed as replacement for ${old.id}${det?'. '+det:''}`,date);await DB.put('tyres',nw);
     const id=await DB.nextId('RP',6);await DB.put('replacements',{id,vehicleId:v.id,reg:v.reg,positionId:pos,positionLabel:lbl,oldTyreId:old.id,oldBrand:old.brand,oldSize:old.size,oldStatusAfter:st,newTyreId:nw.id,newBrand:nw.brand,newSize:nw.size,date,km:v.odo,hours:v.hours,reason,installDetails:det,technician:prof().name,remarks:$('#rpm').value.trim(),created:new Date().toISOString()});
     toast('Replacement completed: '+id);replacement(v.id)}}

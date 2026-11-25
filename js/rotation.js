@@ -22,6 +22,6 @@ async function rotation(arg){
     const er=await applyReading(v,$('#rk').value,$('#rh').value);if(er)return toast(er);
     const log=[];for(const m of moves){for(const f of(await DB.all('fitments')).filter(f=>f.tyreId===m.t.id&&!f.toDate)){f.toDate=date;f.toKm=v.odo;f.toHours=v.hours;f.reason='Rotation';await DB.put('fitments',f)}
       await DB.put('fitments',{id:await DB.nextId('FT',5),tyreId:m.t.id,vehicleId:v.id,positionId:m.to,fromDate:date,fromKm:v.odo,fromHours:v.hours,toDate:null,toKm:null,reason:'',via:'Rotation'});
-      m.t.positionId=m.to;addEvent(m.t,'Rotation',`Rotated on ${v.reg}: ${posLabel(v,m.from)} → ${posLabel(v,m.to)} at ${v.odo} KM / ${v.hours} hrs`);await DB.put('tyres',m.t);log.push({tyreId:m.t.id,from:m.from,to:m.to,fromLabel:posLabel(v,m.from),toLabel:posLabel(v,m.to)})}
+      m.t.positionId=m.to;addEvent(m.t,'Rotation',`Rotated on ${v.reg}: ${posLabel(v,m.from)} → ${posLabel(v,m.to)} at ${v.odo} KM / ${v.hours} hrs`,date);await DB.put('tyres',m.t);log.push({tyreId:m.t.id,from:m.from,to:m.to,fromLabel:posLabel(v,m.from),toLabel:posLabel(v,m.to)})}
     const id=await DB.nextId('RT',6);await DB.put('rotations',{id,vehicleId:v.id,reg:v.reg,date,km:v.odo,hours:v.hours,moves:log,remarks:$('#rtm').value.trim(),technician:prof().name,created:new Date().toISOString()});
     toast('Rotation completed: '+id);rotation(v.id)}}

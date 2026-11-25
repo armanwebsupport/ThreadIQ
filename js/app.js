@@ -18,13 +18,15 @@ function register(){const r=$('#register');r.classList.remove('hidden');r.style.
   $('#rf').onsubmit=e=>{e.preventDefault();localStorage.setItem('tiq_profile',JSON.stringify({name:$('#rn').value.trim(),emp:$('#re').value.trim(),dept:$('#rd').value.trim(),company:$('#rc').value.trim()}));r.classList.add('hidden');start()}}
 function start(){['#top','#nav'].forEach(s=>$(s).classList.remove('hidden'));window.onhashchange=route;route()}
 const soon=(t,ph)=>{$('#view').innerHTML=`<h2>${t}</h2><div class="card mut">This module is coming in ${ph}.</div>`};
+function showErr(e){console.error(e);$('#view').innerHTML=`<h2>Something went wrong</h2><div class="card"><div style="color:var(--bad)">${esc((e&&e.message)||e)}</div><div class="mut" style="margin-top:8px">This page could not be opened. Go back and try again. If it keeps happening, send a screenshot of this message.</div><button class="btn" style="margin-top:10px" onclick="history.back()">Go Back</button></div>`}
+window.addEventListener('unhandledrejection',e=>{try{toast('Error: '+((e.reason&&e.reason.message)||e.reason))}catch(x){}});
 async function route(){const h=(location.hash||'#home').slice(1),[p,arg]=h.split('/'),key='#'+h,restore=navFwd?0:(SP[key]||0);navFwd=false;navBusy=true;
   const tab=['vehicle-add','vehicle'].includes(p)?'vehicles':['home','vehicles','inspection','analytics'].includes(p)?p:'more';
   document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.dataset.r===tab));
   $('#view').innerHTML='';
   const R={home,vehicles,'vehicle-add':vAdd,vehicle:vDetail,inspection,history:inspHistory,replacement,rotation,maintenance,'maintenance-add':maintenanceForm,jobcard:jobCard,'inspection-view':inspView,more,settings,inventory,tyre:tyreView,'tyre-add':tyreForm,alerts:alertsView,analytics,reports,report:reportView,pressure,'tyre-edit':tyreEdit,'vehicle-edit':vehicleEdit};
   const L={inspection:'Inspection|Phase 3',analytics:'Analytics|Phase 5',inventory:'Tyre Inventory|Phase 2',replacement:'Replacement|Phase 4',rotation:'Rotation|Phase 4',reports:'Reports|Phase 5',history:'Inspection History|Phase 3',maintenance:'Maintenance|Phase 4',pressure:'Pressure Monitoring|Phase 3'};
-  try{if(R[p])await R[p](arg);else if(L[p])soon(...L[p].split('|'));else go('home')}finally{curHash=key;navBusy=false;if(typeof refreshBell==='function')refreshBell();scrollTo(0,restore);if(restore)[60,200,500].forEach(ms=>setTimeout(()=>{if(curHash===key&&Math.abs(scrollY-restore)>4)scrollTo(0,restore)},ms))}}
+  try{if(R[p])await R[p](arg);else if(L[p])soon(...L[p].split('|'));else go('home')}catch(e){showErr(e)}finally{curHash=key;navBusy=false;if(typeof refreshBell==='function')refreshBell();scrollTo(0,restore);if(restore)[60,200,500].forEach(ms=>setTimeout(()=>{if(curHash===key&&Math.abs(scrollY-restore)>4)scrollTo(0,restore)},ms))}}
 
 async function home(){const nAlerts=(await computeAlerts()).length,fs=await fleetStatus();const p=prof(),vs=await DB.all('vehicles'),ty=await DB.all('tyres'),act=vs.filter(v=>v.active!==false);
   const h=ty.filter(t=>HEALTHY.includes(t.condition)).length,a=ty.filter(t=>t.condition==='Needs Attention').length,c=ty.filter(t=>CRIT.includes(t.condition)).length,ins=h+a+c,pct=ins?Math.round(h/ins*100):0,C=2*Math.PI*44;

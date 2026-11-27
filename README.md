@@ -5,6 +5,7 @@ Tyre inspection and lifecycle management app (HTML + CSS + vanilla JS, IndexedDB
 - Vehicles (4/6/10/12/14/18 wheels or custom axles), vehicle code, search, real inspection status
 - Tyre = serial number. The serial number is the tyre code. No serial -> saved as NOT FOUND with a random `AUTO-XXXXXX` code (not a real serial); add the real serial later and the code changes everywhere
 - Camera scan of barcode / QR serial labels (native scanner in the APK)
+- Full tyre lifecycle: every fitment with date, KM, hours and days; per-vehicle totals; total life until scrap (profile + Lifecycle report)
 - Inspections (tread, damage, pressure, photos), job cards from findings, replacement, rotation, maintenance
 - Company standards per tyre size (PSI, minimum tread), alerts and a bell badge with the alert count
 - Analytics, 10 reports (CSV + PDF), JSON backup / restore through the Share menu

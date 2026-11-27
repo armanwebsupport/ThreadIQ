@@ -1,3 +1,5 @@
+/* local date/time as ISO text (toISOString alone gives UTC, which is the previous day in India before 05:30) */
+const localISO=(d=new Date())=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString();
 /* ThreadIQ database layer (IndexedDB). Stores are fixed for all phases. */
 const DB=(()=>{
   const bell=()=>{if(typeof refreshBell==='function')refreshBell()};

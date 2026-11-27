@@ -3,7 +3,7 @@ const ID_RE=/^[A-Z0-9][A-Z0-9._-]{0,31}$/;
 const STATUSES=['New','In-Service','Removed','Spare','Under Repair','Scrapped'];
 const BRANDS=['Apollo','MRF','CEAT','JK Tyre','Bridgestone','Michelin','Goodyear','Yokohama','Continental','BKT','Other'];
 const REMOVE_REASONS=['Tread Wear','Sidewall Damage','Cut Damage','Tyre Burst','Irregular Wear','Repair Not Possible','Preventive Replacement','Other'];
-const today=()=>new Date().toISOString().slice(0,10);
+const today=()=>localISO().slice(0,10);
 const condCls=c=>HEALTHY.includes(c)?'g':c==='Needs Attention'?'y':CRIT.includes(c)?'r':'n';
 const statCls={'New':'g','In-Service':'g','Spare':'y','Removed':'n','Under Repair':'y','Scrapped':'r'};
 const posLabel=(v,pid)=>(buildLayout(v.axles).find(x=>x.id===pid)||{label:pid}).label;
